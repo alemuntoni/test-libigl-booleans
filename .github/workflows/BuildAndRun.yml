@@ -1,0 +1,38 @@
+name: BuildAndRun
+
+on:
+  [push, pull_request]
+
+jobs:
+  build_and_run:
+    name: Build and Run
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'macos-14']
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Setup Environment
+      if: ${{ runner.os  == 'Linux' }}
+      shell: bash
+      run: |
+        sudo apt-get install -y cmake libcgal-dev libeigen3-dev
+    - name: Setup Environment
+      if: ${{ runner.os  == 'macOS' }}
+      shell: bash
+      run: |
+        brew install cmake
+        brew install cgal
+        brew install eigen
+    - name: Build
+      run: cmake -B build -S . && cmake --build build
+    - name: Run
+      run: ./build/test-libigl-booleans
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}
+        path: assets/result.obj
